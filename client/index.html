@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agent Voice HUD</title>
+
+  <!-- Fonts: Futuristic headings + clean body -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/client/styles/main.css" />
+</head>
+<body>
+  <!-- subtle scanlines -->
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+  <div class="grid-bg" aria-hidden="true"></div>
+
+  <div class="container">
+    <header class="hud-header">
+      <div class="title-wrap">
+        <h1 class="hud-title">Agent<span class="accent">/</span>VOICE<span class="accent">/</span>HUD</h1>
+        <div class="subtitle">real-time conversational intelligence</div>
+      </div>
+      <div class="badge glow">ONLINE</div>
+    </header>
+
+    <!-- Control Deck -->
+    <section class="card holo">
+      <div class="card-head">
+        <span class="card-title">CONTROL DECK</span>
+        <div class="brackets">
+          <span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <div class="controls">
+        <label class="field">
+          <span>VOICE CHANNEL</span>
+          <select id="voice" class="chip-input">
+            <option value="verse">verse</option>
+            <option value="alloy">alloy</option>
+            <option value="aria">aria</option>
+          </select>
+        </label>
+
+        <label class="field grow">
+          <span>CORE DIRECTIVE</span>
+          <input id="instructions" class="chip-input" type="text"
+                 value="You are a helpful real-time voice assistant. Speak clearly and briefly." />
+        </label>
+
+        <div class="btns">
+          <button id="connectBtn" class="btn neon">CONNECT</button>
+          <button id="disconnectBtn" class="btn" disabled>DISCONNECT</button>
+          <button id="muteBtn" class="btn" disabled>MUTE</button>
+          <button id="unmuteBtn" class="btn" disabled>UNMUTE</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Voice Ring + Agent Activity -->
+    <section class="card holo">
+      <div class="card-head">
+        <span class="card-title">AUDIO TELEMETRY</span>
+        <div class="status-chips">
+          <span id="rtcInfo" class="chip">RTC: —</span>
+          <span id="captionsInfo" class="chip">CAPTIONS: —</span>
+          <span id="agentSpeakingBadge" class="chip">AGENT: idle</span>
+        </div>
+      </div>
+
+      <div class="telemetry">
+        <div class="ring-wrap">
+          <canvas id="voiceRing" width="220" height="220" aria-hidden="true"></canvas>
+          <div class="ring-core">
+            <div class="ring-dot"></div>
+            <div class="ring-text">VOICE LINK</div>
+          </div>
+        </div>
+
+        <div class="eq-wrap">
+          <div class="eq">
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div>
+          </div>
+          <div class="eq-label">SPEECH ENERGY</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Live Text (current line only) -->
+    <section class="card holo">
+      <div class="card-head">
+        <span class="card-title">LIVE TRANSCRIPT</span>
+        <div class="brackets"><span></span><span></span><span></span><span></span></div>
+      </div>
+
+      <div class="tiles">
+        <div class="tile">
+          <div class="tile-head">
+            <span class="tile-title">YOU</span>
+            <span class="tiny-led on"></span>
+          </div>
+          <div id="youLive" class="live-line"><span class="placeholder">— awaiting input —</span></div>
+        </div>
+
+        <div class="tile">
+          <div class="tile-head">
+            <span class="tile-title">AGENT</span>
+            <span class="tiny-led" id="agentLed"></span>
+          </div>
+          <div id="agentLive" class="live-line"><span class="placeholder">— awaiting response —</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Status Log -->
+    <section class="card holo">
+      <div class="card-head">
+        <span class="card-title">SYSTEM LOG</span>
+      </div>
+      <pre id="status" class="log">Idle</pre>
+    </section>
+  </div>
+
+  <script src="/client/scripts/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <!-- Start a bidirectional media stream to your server.
+       Replace wss://example.com/stream with your media bridge endpoint. -->
+  <Start>
+    <Stream url="wss://YOUR_DOMAIN.example/streams/twilio" />
+  </Start>
+  <Say>Connecting you to our AI assistant.</Say>
+  <!-- Keep the call open; your media bridge returns audio back to Twilio -->
+  <Pause length="60"/>
+</Response>

@@ -1,0 +1,4 @@
+.venv
+.env
+article
+*\__pycache__
