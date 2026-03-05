@@ -34,7 +34,7 @@ app = FastAPI(title="voice-agent-realtime-mcp-sip")
 async def startup():
     print("Building website knowledge index...")
     if not load_index():
-        await build_index()
+####    await build_index() ------ Do not await, may block Render port opening at Startup
     print("Website index ready")
     # Start automatic daily refresh -------------------------
     asyncio.create_task(refresh_loop())
