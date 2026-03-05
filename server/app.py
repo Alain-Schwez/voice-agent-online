@@ -65,17 +65,47 @@ async def create_ephemeral_session(request: Request):
         raise HTTPException(status_code=500, detail="OPENAI_API_KEY not configured")
 
     req_json = await request.json() if request.headers.get("content-type","").startswith("application/json") else {}
-    # You can pass voice, instructions, tool definitions, etc. from the client or set defaults here.
+    
+    # -----------  You can pass voice, instructions, tool definitions, etc. from the client or set defaults here.------------------------
+    
     voice = req_json.get("voice", "verse")  # example voice name
-    instructions = req_json.get("instructions", "You are a helpful real-time voice assistant. Keep responses brief.")
-    # Example: tool/function schemas could be injected here if needed.
+    
+    instructions = """
+    You are a voice assistant for a website.
+    You must answer ONLY using information retrieved from the company website.
+    Always call the tool 'search_knowledge' before answering questions.
+    If the information cannot be found in the website knowledge base, say:
+    "Sorry, I could not find that information that information."
+     Do not invent answers. """
+    
+    # Original piece of code: instructions = req_json.get("instructions", "You are a helpful real-time voice assistant. Keep responses brief.")
+        
+    # -------------- Example: tool/function schemas could be injected here if needed. -----------------------------------------------------
+    
     # tools = [...]
 
+    tools = [
+        {
+            "type": "function",
+            "name": "search_knowledge",
+            "description": "Search the company website knowledge base",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"}
+                },
+                "required": ["query"]
+            }
+       }  
+    ]
+
+    
     payload = {
         "model": MODEL,
         "voice": voice,
         "instructions": instructions,
-        # "tools": tools,
+        "tools": tools,
+        "tool_choice": "auto",
         # "modalities": ["audio","text"],  # provider-specific
     }
 
