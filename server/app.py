@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 import httpx
 
 # File contains target website and other scraping and refreshing parameters -----------------
-from server.website_index import build_index, refresh_loop
+from server.website_index import build_index, refresh_loop, load_index
 import asyncio
 
 load_dotenv()
@@ -31,7 +31,8 @@ app = FastAPI(title="voice-agent-realtime-mcp-sip")
 @app.on_event("startup")
 async def startup():
     print("Building website knowledge index...")
-    await build_index()
+    if not load_index():
+        await build_index()
     print("Website index ready")
     # Start automatic daily refresh -------------------------
     asyncio.create_task(refresh_loop())
