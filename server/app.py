@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 import httpx
 
 # File contains target website and other scraping and refreshing parameters -----------------
-from website_index import build_index, refresh_loop
+from server.website_index import build_index, refresh_loop
 import asyncio
 
 load_dotenv()
