@@ -9,6 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import httpx
 
+# File contains target website and other scraping and refreshing parameters -----------------
+from website_index import build_index, refresh_loop
+import asyncio
+
 load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -23,7 +27,16 @@ CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:8
 
 app = FastAPI(title="voice-agent-realtime-mcp-sip")
 
-# Basic CORS for local dev
+# Startup initialization -----------------------------------
+@app.on_event("startup")
+async def startup():
+    print("Building website knowledge index...")
+    await build_index()
+    print("Website index ready")
+    # Start automatic daily refresh -------------------------
+    asyncio.create_task(refresh_loop())
+
+# Basic CORS for local dev -----------------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS or ["*"],
@@ -32,7 +45,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve the client files
+# Serve the client files -------------------------------------
 app.mount("/client", StaticFiles(directory="client", html=True), name="client")
 
 @app.get("/", response_class=HTMLResponse)
