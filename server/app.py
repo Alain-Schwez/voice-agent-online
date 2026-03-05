@@ -15,6 +15,10 @@ import asyncio
 
 load_dotenv()
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 print("RUNNING APP FROM:", __file__)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
