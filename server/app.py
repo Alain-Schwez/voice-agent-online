@@ -15,6 +15,8 @@ import asyncio
 
 load_dotenv()
 
+print("RUNNING APP FROM:", __file__)
+
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.openai.com")
 MODEL = os.getenv("MODEL", "gpt-realtime")
