@@ -354,8 +354,9 @@ def compress_context(query: str, chunks: list[str], max_sentences: int = 6) -> s
 
         # Weighted score: adjust weights if you want ---------------------------
         # "sim" is the cosine similarity between the user query embedding and the
-          sentence embedding
-          " kw / max(1, len(q_words)": q_words = number of words in the query, kw = number of shared words
+        #  sentence embedding
+        #  " kw / max(1, len(q_words)": q_words = number of words in the query, kw = number of shared words
+        
         score = (0.9 * float(sim)) + (0.1 * (kw / max(1, len(q_words))))
         scored.append((score, sent))
 
