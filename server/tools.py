@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional
 
-from server.website_index import search
+from website_index import search
 
 router = APIRouter()
 
