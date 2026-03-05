@@ -39,7 +39,7 @@ async def startup():
 
     asyncio.create_task(refresh_loop())
 
-    print("Startup tasks scheduled")
+    print("Website index ready")
 
 # Basic CORS for local dev -----------------------------------
 app.add_middleware(
