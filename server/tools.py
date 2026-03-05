@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional
 
+
 router = APIRouter()
 
 class CreateTicketBody(BaseModel):
