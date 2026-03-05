@@ -1,7 +1,7 @@
 import httpx
 from bs4 import BeautifulSoup
 from sentence_transformers import SentenceTransformer
-import faiss
+import faiss   # --- vector search engine optimized for similarity search, developed by Meta Platforms
 import numpy as np
 from urllib.parse import urljoin, urlparse
 import asyncio
