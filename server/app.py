@@ -28,6 +28,7 @@ print("OPENAI_API_KEY variable =", OPENAI_API_KEY)
 CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:8000").split(",") if o.strip()]
 
 app = FastAPI(title="voice-agent-realtime-mcp-sip")
+print("APP object created")
 
 @app.get("/health")
 def health():
@@ -35,6 +36,7 @@ def health():
 
 # ----- Startup initialization -----------------------------------
 @app.on_event("startup")
+print("Startup entered")
 async def startup():
     if not load_index():
         asyncio.create_task(build_index())
