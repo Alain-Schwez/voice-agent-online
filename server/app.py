@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import httpx
 
-from website_index import build_index, refresh_loop, load_index
+# --------------------------- from website_index import build_index, refresh_loop, load_index
 
 load_dotenv()
 
@@ -38,16 +38,16 @@ def health():
     return {"status": "ok"}
 
 
-@app.on_event("startup")
-async def startup():
-    print("Startup entered")
+#@app.on_event("startup")
+#async def startup():
+#    print("Startup entered")
 
-    if not load_index():
-        asyncio.create_task(build_index())
+#    if not load_index():
+#        asyncio.create_task(build_index())
 
-    asyncio.create_task(refresh_loop())
+#    asyncio.create_task(refresh_loop())
 
-    print("Startup tasks scheduled")
+#    print("Startup tasks scheduled")
 
 
 # ----- Basic CORS for local dev -----------------------------------
