@@ -33,19 +33,19 @@ CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:8
 
 app = FastAPI(title="voice-agent-realtime-mcp-sip")
 
-# Startup initialization -----------------------------------
+# ----- Startup initialization -----------------------------------
 @app.on_event("startup")
 async def startup():
-    print("Starting server...")
-
     if not load_index():
         asyncio.create_task(build_index())
-
-    asyncio.create_task(refresh_loop())
-
+    asyncio.create_task(refresh_loop())  # do NOT await
     print("Website index ready")
 
-# Basic CORS for local dev -----------------------------------
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+# ----- Basic CORS for local dev -----------------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS or ["*"],
