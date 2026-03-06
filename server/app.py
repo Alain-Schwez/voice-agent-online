@@ -14,6 +14,9 @@ import httpx
 
 load_dotenv()
 
+BASE_DIR = os.path.dirname(__file__)
+CLIENT_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "client"))
+
 print("RUNNING APP FROM:", __file__)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -62,7 +65,7 @@ app.add_middleware(
 )
 
 # Serve the client files -------------------------------------
-app.mount("/client", StaticFiles(directory="client", html=True), name="client")
+app.mount("/client", StaticFiles(directory=CLIENT_DIR, html=True), name="client")
 
 @app.get("/", response_class=HTMLResponse)
 async def root_index():
