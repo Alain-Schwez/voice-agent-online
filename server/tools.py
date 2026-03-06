@@ -63,6 +63,7 @@ class KnowledgeSearchBody(BaseModel):
 
 @router.post("/search_knowledge")
 async def search_knowledge(body: KnowledgeSearchBody):
+    from website_index import search
 
     results = search(body.query)
 
