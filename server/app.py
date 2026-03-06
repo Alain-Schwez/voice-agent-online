@@ -165,8 +165,8 @@ async def create_ephemeral_session(request: Request):
 
 # --- Example "remote tools" HTTP endpoints (MCP-like) ---
 
-# TO KEEP AFTER TESTING ------------------ from tools import router as tools_router
-# TO KEEP AFTER TESTING ------------------ app.include_router(tools_router, prefix="/v1/tools", tags=["tools"])
+from tools import router as tools_router # TO KEEP AFTER TESTING ------------------ 
+app.include_router(tools_router, prefix="/v1/tools", tags=["tools"]) # TO KEEP AFTER TESTING ------------------ 
 
 
 # --- Optional: Twilio/CPaaS SIP stubs (NOT enabled by default) ---
