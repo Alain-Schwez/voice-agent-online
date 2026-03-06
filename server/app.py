@@ -121,14 +121,15 @@ async def create_ephemeral_session(request: Request):
 
     
     payload = {
-        "model": MODEL,
-        "voice": voice,
-        "instructions": instructions,
-        "tools": tools,
-        "tool_choice": "auto",
-        # "modalities": ["audio","text"],  # provider-specific
+    "model": MODEL,
+    "voice": voice,
+    "instructions": instructions,
+    "tools": tools,
+    "tool_choice": "auto",
+    "turn_detection": {
+        "type": "server_vad"
     }
-
+        
     # NOTE: Endpoint path and fields may evolve; verify with your provider's docs.
     url = f"{OPENAI_BASE_URL}/v1/realtime/sessions"
 
