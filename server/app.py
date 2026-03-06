@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import httpx
 
-# --------------------------- from website_index import build_index, refresh_loop, load_index
+# TO KEEP AFTER TESTING ------- from website_index import build_index, refresh_loop, load_index
 
 load_dotenv()
 
@@ -69,7 +69,8 @@ app.mount("/client", StaticFiles(directory=CLIENT_DIR, html=True), name="client"
 
 @app.get("/", response_class=HTMLResponse)
 async def root_index():
-    return HTMLResponse((open("client/index.html", "r", encoding="utf-8").read()))
+    with open(os.path.join(CLIENT_DIR, "index.html"), "r", encoding="utf-8") as f:
+        return HTMLResponse(f.read())
 
 @app.post("/v1/voice/session")
 async def create_ephemeral_session(request: Request):
@@ -163,12 +164,13 @@ async def create_ephemeral_session(request: Request):
 
 
 # --- Example "remote tools" HTTP endpoints (MCP-like) ---
-from .tools import router as tools_router
-app.include_router(tools_router, prefix="/v1/tools", tags=["tools"])
+
+# TO KEEP AFTER TESTING ------------------from tools import router as tools_router
+# TO KEEP AFTER TESTING ------------------app.include_router(tools_router, prefix="/v1/tools", tags=["tools"])
 
 
 # --- Optional: Twilio/CPaaS SIP stubs (NOT enabled by default) ---
-# from .sip_webhooks import router as sip_router
+# from sip_webhooks import router as sip_router
 # app.include_router(sip_router, prefix="/v1/sip", tags=["sip"])
 
 # -------------------- FUNCTION-CALLING REGISTRY (server-executed) --------------------
