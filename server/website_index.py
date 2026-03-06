@@ -29,7 +29,13 @@ HASH_FILE = "page_hashes.pkl"
 # Globals
 # ------------------------------------------------------------------------------
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
+model = None
+
+def get_model():
+    global model
+    if model is None:
+        model = SentenceTransformer("all-MiniLM-L6-v2")
+    return model
 
 documents = []
 page_hashes = {}
@@ -288,7 +294,7 @@ async def build_index():
 
     documents.extend(new_chunks)
 
-    embeddings = model.encode(new_chunks)
+    embeddings = get_model().encode(new_chunks)
 
     if index is None:
 
@@ -338,8 +344,8 @@ def compress_context(query: str, chunks: list[str], max_sentences: int = 6) -> s
         return "\n\n".join(chunks[:2])
 
     # Semantic similarity: embed query once, embed sentences once --------------
-    q_emb = model.encode([query], normalize_embeddings=True)
-    s_emb = model.encode(sentences, normalize_embeddings=True)
+    q_emb = get_model().encode([query], normalize_embeddings=True)
+    s_emb = get_model().encode(sentences, normalize_embeddings=True)
 
     # cosine similarity since normalized: dot product --------------------------
     sims = (s_emb @ q_emb[0]).tolist()
@@ -386,7 +392,7 @@ def search(query, k=5):
     if index is None:
         return "Knowledge index not ready."
 
-    query_embedding = model.encode([query])
+    query_embedding = get_model().encode([query])
 
     distances, indices = index.search(query_embedding, k * 3)
 
