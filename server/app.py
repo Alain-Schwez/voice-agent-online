@@ -128,7 +128,8 @@ async def create_ephemeral_session(request: Request):
     "tool_choice": "auto",
     "turn_detection": {
         "type": "server_vad"
-    }
+     }
+   }
         
     # NOTE: Endpoint path and fields may evolve; verify with your provider's docs.
     url = f"{OPENAI_BASE_URL}/v1/realtime/sessions"
