@@ -15,10 +15,6 @@ import asyncio
 
 load_dotenv()
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
-
 print("RUNNING APP FROM:", __file__)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -32,6 +28,10 @@ print("OPENAI_API_KEY variable =", OPENAI_API_KEY)
 CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:8000").split(",") if o.strip()]
 
 app = FastAPI(title="voice-agent-realtime-mcp-sip")
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 # ----- Startup initialization -----------------------------------
 @app.on_event("startup")
