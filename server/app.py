@@ -1,6 +1,7 @@
 import os
 import json
 import typing as t
+import asyncio
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
@@ -9,9 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import httpx
 
-# File contains target website and other scraping and refreshing parameters -----------------
 from website_index import build_index, refresh_loop, load_index
-import asyncio
 
 load_dotenv()
 
@@ -22,30 +21,36 @@ OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.openai.com")
 MODEL = os.getenv("MODEL", "gpt-realtime")
 
 print("AFTER LOAD_DOTENV")
-print("OPENAI_API_KEY from env =", os.getenv("OPENAI_API_KEY"))
-print("OPENAI_API_KEY variable =", OPENAI_API_KEY)
+print("OPENAI_API_KEY set:", bool(OPENAI_API_KEY))
 
-CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:8000").split(",") if o.strip()]
+CORS_ORIGINS = [
+    o.strip()
+    for o in os.getenv("CORS_ORIGINS", "http://localhost:8000").split(",")
+    if o.strip()
+]
 
 app = FastAPI(title="voice-agent-realtime-mcp-sip")
 print("APP object created")
 
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
-# ----- Startup initialization -----------------------------------
+
 @app.on_event("startup")
-print("Startup entered")
 async def startup():
+    print("Startup entered")
+
     if not load_index():
         asyncio.create_task(build_index())
-    asyncio.create_task(refresh_loop())  # do NOT await
-    print("Website index ready")
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+    asyncio.create_task(refresh_loop())
+
+    print("Startup tasks scheduled")
+
+
+# ----- Basic CORS for local dev -----------------------------------
 
 # ----- Basic CORS for local dev -----------------------------------
 app.add_middleware(
