@@ -5,16 +5,14 @@ from typing import Any, Dict
 
 from fastapi import FastAPI, Request, HTTPException, Body
 from fastapi.responses import JSONResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import httpx
 
-# --- Basic logging ---
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("app")
 
-# --- Load env (lightweight) ---
+# Load env
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.openai.com")
@@ -23,7 +21,6 @@ CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:8
 
 logger.info("Environment loaded. OPENAI_API_KEY set: %s", bool(OPENAI_API_KEY))
 
-# --- FastAPI app (minimal at import time) ---
 app = FastAPI(title="voice-agent-realtime-mcp-sip")
 
 # CORS
@@ -35,27 +32,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files using relative path (simpler in many deploy layouts)
-app.mount("/client", StaticFiles(directory="client", html=True), name="client")
-
+# Mount static files only if directory exists (prevents import-time crash)
+CLIENT_DIR = os.path.join(os.path.dirname(__file__), "client")
+if os.path.isdir(CLIENT_DIR):
+    from fastapi.staticfiles import StaticFiles
+    app.mount("/client", StaticFiles(directory=CLIENT_DIR, html=True), name="client")
+    logger.info("Mounted static client from %s", CLIENT_DIR)
+else:
+    logger.warning("Client directory not found at %s — skipping StaticFiles mount", CLIENT_DIR)
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
-
 @app.get("/", response_class=HTMLResponse)
 async def root_index():
-    # Keep this simple and lightweight
-    try:
-        with open("client/index.html", "r", encoding="utf-8") as f:
+    index_path = os.path.join(CLIENT_DIR, "index.html")
+    if os.path.isfile(index_path):
+        with open(index_path, "r", encoding="utf-8") as f:
             return HTMLResponse(f.read())
-    except Exception as e:
-        logger.exception("Failed to read client/index.html")
-        raise HTTPException(status_code=500, detail="index.html not available")
+    return HTMLResponse("<html><body><h1>App running (no client files)</h1></body></html>")
 
-
-# --- Lightweight session endpoint (no heavy imports) ---
 @app.post("/v1/voice/session")
 async def create_ephemeral_session(request: Request):
     if not OPENAI_API_KEY:
@@ -65,12 +62,7 @@ async def create_ephemeral_session(request: Request):
     voice = req_json.get("voice", "verse")
     instructions = req_json.get("instructions", "You are a helpful real-time voice assistant. Keep responses brief.")
 
-    payload: Dict[str, Any] = {
-        "model": MODEL,
-        "voice": voice,
-        "instructions": instructions,
-    }
-
+    payload: Dict[str, Any] = {"model": MODEL, "voice": voice, "instructions": instructions}
     url = f"{OPENAI_BASE_URL}/v1/realtime/sessions"
     headers = {"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"}
 
@@ -94,12 +86,8 @@ async def create_ephemeral_session(request: Request):
 
     return JSONResponse(data)
 
-
-# --- Tool endpoints (light definitions only) ---
-from fastapi import Body
-
+# Simple tool registry
 FUNCTION_REGISTRY = {}
-
 def tool(name):
     def _wrap(fn):
         FUNCTION_REGISTRY[name] = fn
@@ -160,52 +148,38 @@ async def get_tool_schemas():
         }
     ]})
 
-
-# --- Warm-up / delayed heavy initialization ---
-# This background task runs after the app has started and the server has bound to the port.
-# It performs expensive imports and schedules long-running background loops without blocking startup.
+# Warmup: lazy import of heavy modules after startup
 async def warmup_tasks():
-    await asyncio.sleep(1)  # slight delay to ensure server is fully up
-    logger.info("Warmup: starting heavy initialization (imports, indexing, background loops)...")
-
-    # Import website_index lazily to avoid import-time side-effects
+    await asyncio.sleep(1)
+    logger.info("Warmup: starting heavy initialization...")
     try:
-        from website_index import build_index, refresh_loop, load_index  # local import
+        from website_index import build_index, refresh_loop, load_index
     except Exception:
-        logger.exception("Failed to import website_index; skipping warmup indexing.")
+        logger.exception("website_index import failed — skipping indexing warmup")
         return
 
-    # Attempt to load index (fast path). If not present, schedule build in background.
     try:
         loaded = False
         try:
             loaded = load_index()
         except Exception:
-            logger.exception("load_index() failed or raised an exception.")
+            logger.exception("load_index() failed")
             loaded = False
 
         if not loaded:
-            logger.info("Index not loaded; scheduling build_index() as background task.")
-            # schedule build_index but don't await it here
             asyncio.create_task(build_index())
-
-        # schedule refresh loop as background task
         asyncio.create_task(refresh_loop())
-        logger.info("Warmup: scheduled build_index and refresh_loop as background tasks.")
+        logger.info("Warmup: scheduled background index tasks")
     except Exception:
-        logger.exception("Unexpected error during warmup tasks.")
-
+        logger.exception("Unexpected error during warmup")
 
 @app.on_event("startup")
 async def startup_event():
-    # Schedule warmup in background; do not block startup
     logger.info("Startup event: scheduling warmup tasks")
     asyncio.create_task(warmup_tasks())
 
-
-# If you run with `python app.py` locally, support uvicorn.run for convenience
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
-    logger.info("Starting uvicorn for local debug on port %s", port)
+    logger.info("Starting uvicorn locally on port %s", port)
     uvicorn.run("app:app", host="0.0.0.0", port=port, log_level="info")
