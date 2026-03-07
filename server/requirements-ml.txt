@@ -1,0 +1,9 @@
+# ML / heavy deps — install only on worker instances
+torch==2.10.0
+transformers==5.3.0
+sentence-transformers==5.2.3
+faiss-cpu==1.13.2
+scikit-learn==1.8.0
+huggingface-hub==1.6.0
+triton==3.6.0
+safetensors==0.7.0
