@@ -92,11 +92,16 @@ async def create_ephemeral_session(request: Request):
     
     instructions = """
     You are a voice assistant for a website.
-    You must answer ONLY using information retrieved from the company website.
-    Always call the tool 'search_knowledge' before answering questions.
-    If the information cannot be found in the website knowledge base, say:
-    "Sorry, I could not find that information that information."
-     Do not invent answers. """
+    You must answer ONLY using information retrieved from your knowledge base.
+    
+    # Always call the tool 'search_knowledge' before answering questions.
+    # If the information cannot be found in the website knowledge base, say:
+    #  "Sorry, I could not find that information that information."
+
+    Use the search_knowledge tool whenever you need website knowledge to answer accurately.
+    If the answer is not available, say that you could not find it.
+    
+    Do not invent answers. """
     
     # Original piece of code: instructions = req_json.get("instructions", "You are a helpful real-time voice assistant. Keep responses brief.")
         
