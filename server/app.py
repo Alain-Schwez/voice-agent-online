@@ -3,8 +3,8 @@ import json
 import typing as t
 import asyncio
 
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
+from fastapi import FastAPI, Request, HTTPException, Body
+from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -41,14 +41,16 @@ print("APP object created")
 def health():
     return {"status": "ok"}
 
-Uncomment if the startup tasks are needed
- @app.on_event("startup")
- async def startup():
-     print("Startup entered")
-     if not load_index():
-         asyncio.create_task(build_index())
-     asyncio.create_task(refresh_loop())
-     print("Startup tasks scheduled")
+# Uncomment if the startup tasks are needed
+@app.on_event("startup")
+async def startup():
+    print("Startup entered")
+    if not load_index():
+        print("Loading index...")
+        asyncio.create_task(build_index())
+        print("Index build scheduled.")
+    asyncio.create_task(refresh_loop())
+    print("Refresh loop scheduled.")
 
 # ----- Basic CORS for local dev -----------------------------------
 print("Initializing CORS middleware...")
@@ -68,6 +70,7 @@ print("Static files mounted.")
 
 @app.get("/", response_class=HTMLResponse)
 async def root_index():
+    print("Serving index.html...")
     with open(os.path.join(CLIENT_DIR, "index.html"), "r", encoding="utf-8") as f:
         return HTMLResponse(f.read())
 
