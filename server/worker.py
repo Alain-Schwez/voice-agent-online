@@ -4,9 +4,25 @@ import time
 import logging
 import inspect
 import asyncio
+import signal
+import sys
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s:%(name)s:%(message)s")
 logger = logging.getLogger("worker")
+
+# lifecycle info
+logger.info("PID %s cwd=%s", os.getpid(), os.getcwd())
+
+def handle_signal(sig, frame):
+    logger.warning("Received signal %s, exiting", sig)
+    sys.exit(0)
+
+for s in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+    try:
+        signal.signal(s, handle_signal)
+    except Exception:
+        # some platforms may not support all signals
+        pass
 
 
 def run_sync_or_async(fn):
