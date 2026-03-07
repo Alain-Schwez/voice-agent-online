@@ -1,6 +1,5 @@
 import httpx
 from bs4 import BeautifulSoup
-from sentence_transformers import SentenceTransformer
 import faiss   # --- vector search engine optimized for similarity search, developed by Meta Platforms
 import numpy as np
 from urllib.parse import urljoin, urlparse
@@ -25,17 +24,18 @@ INDEX_FILE = "vector_index.faiss"
 DOC_FILE = "documents.pkl"
 HASH_FILE = "page_hashes.pkl"
 
+# OpenAI embedding settings
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_EMBED_MODEL = "text-embedding-3-small"  # smaller & cheaper; change if desired
+EMBED_BATCH = 100
+OPENAI_API_URL = "https://api.openai.com/v1/embeddings"
+
+if not OPENAI_API_KEY:
+    raise RuntimeError("OPENAI_API_KEY environment variable is required for embeddings")
+
 # ------------------------------------------------------------------------------
 # Globals
 # ------------------------------------------------------------------------------
-
-model = None
-
-def get_model():
-    global model
-    if model is None:
-        model = SentenceTransformer("all-MiniLM-L6-v2")
-    return model
 
 documents = []
 page_hashes = {}
@@ -103,7 +103,7 @@ async def fetch_page(client, url):
             if parsed.query:
                 continue
 
-            if link.endswith((".jpg",".jpeg",".png",".gif",".svg",".zip",".pdf")):
+            if link.endswith((".jpg",".jpeg",".png",".gif",".svg",".zip")):
                 continue
 
             if any(x in link.lower() for x in [
@@ -255,6 +255,34 @@ def save_index():
 
 
 # ------------------------------------------------------------------------------
+# OpenAI Embeddings (sync helper, batched)
+# ------------------------------------------------------------------------------
+
+def get_embeddings_sync(texts: list[str]) -> np.ndarray:
+    """
+    Send texts to OpenAI embeddings endpoint in batches and return a 2D numpy array.
+    """
+    headers = {
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Content-Type": "application/json",
+    }
+
+    all_embs = []
+
+    for i in range(0, len(texts), EMBED_BATCH):
+        batch = texts[i : i + EMBED_BATCH]
+        payload = {"model": OPENAI_EMBED_MODEL, "input": batch}
+        resp = httpx.post(OPENAI_API_URL, json=payload, headers=headers, timeout=30.0)
+        resp.raise_for_status()
+        j = resp.json()
+        # "data" is a list of objects with "embedding"
+        for item in j["data"]:
+            all_embs.append(item["embedding"])
+
+    return np.array(all_embs, dtype=np.float32)
+
+
+# ------------------------------------------------------------------------------
 # Build / update index
 # ------------------------------------------------------------------------------
 
@@ -294,14 +322,21 @@ async def build_index():
 
     documents.extend(new_chunks)
 
-    embeddings = get_model().encode(new_chunks)
+    # get embeddings via OpenAI (sync call) and convert to numpy
+    if new_chunks:
+        embeddings = get_embeddings_sync(new_chunks)
+    else:
+        embeddings = np.zeros((0, 0), dtype=np.float32)
 
     if index is None:
-
+        if embeddings.size == 0:
+            print("No embeddings to create index")
+            return
         dim = embeddings.shape[1]
         index = faiss.IndexFlatL2(dim)
 
-    index.add(np.array(embeddings))
+    if embeddings.size:
+        index.add(np.array(embeddings))
 
     save_index()
 
@@ -323,7 +358,7 @@ async def refresh_loop():
         await build_index()
 
 # ------------------------------------------------------------------------------
-#                 Context compression befor sending text to LLM
+#                 Context compression before sending text to LLM
 # ------------------------------------------------------------------------------
 
 def compress_context(query: str, chunks: list[str], max_sentences: int = 6) -> str:
@@ -344,10 +379,18 @@ def compress_context(query: str, chunks: list[str], max_sentences: int = 6) -> s
         return "\n\n".join(chunks[:2])
 
     # Semantic similarity: embed query once, embed sentences once --------------
-    q_emb = get_model().encode([query], normalize_embeddings=True)
-    s_emb = get_model().encode(sentences, normalize_embeddings=True)
+    q_emb = get_embeddings_sync([query], ).astype(np.float32)
+    s_emb = get_embeddings_sync(sentences).astype(np.float32)
 
-    # cosine similarity since normalized: dot product --------------------------
+    # normalize embeddings for cosine similarity
+    def normalize(a):
+        norms = np.linalg.norm(a, axis=1, keepdims=True)
+        norms[norms == 0] = 1.0
+        return a / norms
+
+    q_emb = normalize(q_emb)
+    s_emb = normalize(s_emb)
+
     sims = (s_emb @ q_emb[0]).tolist()
 
     # Keyword overlap ----------------------------------------------------------
@@ -358,11 +401,6 @@ def compress_context(query: str, chunks: list[str], max_sentences: int = 6) -> s
         s_words = set(re.findall(r"\w+", sent.lower()))
         kw = len(q_words & s_words)
 
-        # Weighted score: adjust weights if you want ---------------------------
-        # "sim" is the cosine similarity between the user query embedding and the
-        #  sentence embedding
-        #  " kw / max(1, len(q_words)": q_words = number of words in the query, kw = number of shared words
-        
         score = (0.9 * float(sim)) + (0.1 * (kw / max(1, len(q_words))))
         scored.append((score, sent))
 
@@ -392,9 +430,15 @@ def search(query, k=5):
     if index is None:
         return "Knowledge index not ready."
 
-    query_embedding = get_model().encode([query])
+    query_embedding = get_embeddings_sync([query]).astype(np.float32)
 
-    distances, indices = index.search(query_embedding, k * 3)
+    # normalize query embedding for better nearest-neighbor behavior if desired
+    if query_embedding.ndim == 2:
+        qe = query_embedding
+    else:
+        qe = query_embedding.reshape(1, -1)
+
+    distances, indices = index.search(qe, k * 3)
 
     semantic_results = []
 
@@ -420,4 +464,3 @@ def search(query, k=5):
     results = [chunk for score, chunk in scored[:k]]
 
     return "\n\n".join(results)
-
