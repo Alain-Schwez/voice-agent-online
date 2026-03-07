@@ -151,11 +151,16 @@ async def get_tool_schemas():
 # Warmup: lazy import of heavy modules after startup
 async def warmup_tasks():
     await asyncio.sleep(1)
+    if os.getenv("ENABLE_INDEXING", "false").lower() not in ("1", "true", "yes"):
+        logger.info("Indexing disabled via ENABLE_INDEXING env (default false); skipping warmup")
+        return
+
     logger.info("Warmup: starting heavy initialization...")
     try:
         from website_index import build_index, refresh_loop, load_index
-    except Exception:
-        logger.exception("website_index import failed — skipping indexing warmup")
+    except Exception as e:
+        # Log missing deps (e.g., sentence-transformers) clearly
+        logger.exception("website_index import failed — skipping indexing warmup: %s", e)
         return
 
     try:
@@ -175,7 +180,8 @@ async def warmup_tasks():
 
 @app.on_event("startup")
 async def startup_event():
-    logger.info("Startup event: scheduling warmup tasks")
+    logger.info("Startup event: scheduling warmup tasks (if enabled)")
+    # schedule but only does heavy work if ENABLE_INDEXING is true
     asyncio.create_task(warmup_tasks())
 
 if __name__ == "__main__":
