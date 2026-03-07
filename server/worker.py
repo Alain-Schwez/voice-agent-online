@@ -9,13 +9,13 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("worker")
 
-# Path or file that indicates index presence; adjust to match your website_index output
-INDEX_MARKER = Path(os.getenv("INDEX_MARKER_PATH", "index/.index_marker"))
-# TTL for considering index fresh (seconds). Set to 0 to always reindex.
-INDEX_TTL_SECONDS = int(os.getenv("INDEX_TTL_SECONDS", str(24 * 3600)))  # -----------------  default 24h
+from pathlib import Path
+# Marker: use the FAISS index file that website_index.save_index() writes
+INDEX_MARKER = Path(os.getenv("INDEX_MARKER_PATH", "vector_index.faiss"))
+# TTL for considering index fresh (seconds). Default matches website_index.REFRESH_INTERVAL (86400s)
+INDEX_TTL_SECONDS = int(os.getenv("INDEX_TTL_SECONDS", "86400"))
 # Keep process alive after initial tasks (set KEEP_ALIVE=0 to exit)
 KEEP_ALIVE = os.getenv("KEEP_ALIVE", "1") not in ("0", "false", "False")
-
 
 def is_index_fresh() -> bool:
     if not INDEX_MARKER.exists():
