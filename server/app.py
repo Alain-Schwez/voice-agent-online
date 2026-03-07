@@ -130,7 +130,7 @@ async def create_ephemeral_session(request: Request):
     "voice": voice,
     "instructions": instructions,
     "tools": tools,
-    "tool_choice": "auto",
+    # --------------------------------------- "tool_choice": "auto",
     "turn_detection": {
         "type": "server_vad"
      }
